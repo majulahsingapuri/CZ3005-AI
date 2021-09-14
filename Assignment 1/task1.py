@@ -7,7 +7,7 @@ from utils.node import Node
 def main():
     """Main function that runs UCS algorithm on given Dataset
     """
-    
+
     # Search Space
     start_node = input("Start Node: ")
     start_node = Node(start_node)
@@ -79,15 +79,27 @@ def main():
             if adj_node not in list(queue.queue):
                 queue.put(adj_node)
     
-    print("Distance: ", end_node.get_distance())
-    
     # Rebuild path
+    path = []
     cur = end_node.get_num()
-    print(cur, end=' ')
+    
+    # Traverse path until start node
+    path.append(cur)
     while pointer[cur] != None:
         cur = pointer[cur]
-        print('<-', cur, end=' ')
-    print()
+        path.append(cur)
+    
+    # Reverse array to read from start to finish
+    path.reverse()
+
+    # Print Path in assignment format
+    print("Shortest Path:", end=' ')
+    for i in range(len(path) - 1):
+        print(path[i], '->', end=' ')
+    print(path[-1])
+    
+    # Print corresponding distance
+    print("Shortest Distance:", end_node.get_distance())
 
 # Run program
 if __name__ == '__main__':
