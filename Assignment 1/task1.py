@@ -5,9 +5,14 @@ from utils.node import Node
 
 # Main function
 def main():
+    """Main function that runs UCS algorithm on given Dataset
+    """
+    
     # Search Space
-    start_node = Node('1')
-    end_node = Node('50')
+    start_node = input("Start Node: ")
+    start_node = Node(start_node)
+    end_node = input("End Node: ")
+    end_node = Node(end_node)
 
     # Priority Queue
     queue = PriorityQueue(maxsize=0)
