@@ -1,18 +1,27 @@
+from json import load
+from math import sqrt
+
+# Load Coordinate data
+with open('utils/Coord.json', 'r') as f:
+        Coord = load(f)
+
 # Node structure
 class Node(object):
 
     # Initialisation
-    def __init__(self, num:str) -> None:
+    def __init__(self, num:str, budget:float=float('inf'), destination=None) -> None:
         """Creates new node from given node number.
 
         Args:
             num (str): The node number as a string from the format in the JSON files.
+            budget (int, optional): The energy budget of the current traversal. Defaults to float('inf').
+            destination (Node, optional): The destination node from this node. Defaults to None.
 
         Raises:
             ValueError: Input is not a string, the string is empty or when the given value is not an integer.
         """
         super().__init__()
-        # Check correct instance and not blank
+        # Check correct instance and not blank for num
         if not isinstance(num, str) or num == "":
             raise ValueError("invalid input for num")
         
@@ -22,10 +31,19 @@ class Node(object):
         except:
             raise ValueError("num is not a valid integer")
 
+        # check correct instance of budget
+        if not isinstance(budget, float):
+            raise ValueError("invalid input for budget")
+
         # Assign values
         self.num = num
         self.distance = float('inf')
+        [self.x, self.y] = Coord[self.num]
+        self.energy = float('inf')
         self.visited = False
+        self.budget = budget
+        self.f_score = float('inf')
+        self.destination:Node = destination
 
     # Check if Nodes are the same
     def __eq__(self, o) -> bool:
@@ -41,7 +59,7 @@ class Node(object):
 
     # Ordering less than
     def __lt__(self, o) -> bool:
-        """Checks if current node is closer to origin than the node to be compared with.
+        """Checks if current node is closer to origin or has a lower F-score than the node to be compared with.
 
         Args:
             o (object): The node to be compared with.
@@ -51,11 +69,12 @@ class Node(object):
         """
         if not self._is_valid_operand(o):
             return NotImplemented
+        if self.destination:
+            return self.f_score < o.f_score
         return self.distance < o.distance
-
     # Ordering more than
     def __gt__(self, o) -> bool:
-        """Checks if current node is further to origin than the node to be compared with.
+        """Checks if current node is further to origin or has a higher F-score than the node to be compared with.
 
         Args:
             o (object): The node to be compared with.
@@ -65,11 +84,12 @@ class Node(object):
         """
         if not self._is_valid_operand(o):
             return NotImplemented
+        if self.destination:
+            return self.f_score > o.f_score
         return self.distance > o.distance
-
     # Ordering less than or equals
     def __le__(self, o) -> bool:
-        """Checks if current node is closer or equidistant to origin than the node to be compared with.
+        """Checks if current node is closer or equidistant to origin or has a less or equal F-score than the node to be compared with.
 
         Args:
             o (object): The node to be compared with.
@@ -79,11 +99,13 @@ class Node(object):
         """
         if not self._is_valid_operand(o):
             return NotImplemented
+        if self.destination:
+            return self.f_score <= o.f_score
         return self.distance <= o.distance
 
     # Ordering more than or equals
     def __ge__(self, o) -> bool:
-        """Checks if current node is further or equidistant to origin than the node to be compared with.
+        """Checks if current node is further or equidistant to origin or has a more or equal F-score than the node to be compared with.
 
         Args:
             o (object): The node to be compared with.
@@ -93,6 +115,8 @@ class Node(object):
         """
         if not self._is_valid_operand(o):
             return NotImplemented
+        if self.destination:
+            return self.f_score >= o.f_score
         return self.distance >= o.distance
 
     # String representation
@@ -102,7 +126,7 @@ class Node(object):
         Returns:
             str: The string representation as Node(id:_, distance:_).
         """
-        return f"Node(id:{self.num}, distance:{self.distance})"
+        return f"Node(id:{self.num}, d:{self.distance}, e:{self.energy}, b:{self.budget}, x:{self.x}, y:{self.y}, f:{self.f_score})"
 
     # String representation
     def __str__(self) -> str:
@@ -111,7 +135,7 @@ class Node(object):
         Returns:
             str: The string representation as Node(id:_, distance:_).
         """
-        return f"Node(id:{self.num}, distance:{self.distance})"
+        return f"Node(id:{self.num}, d:{self.distance}, e:{self.energy}, b:{self.budget}, x:{self.x}, y:{self.y}, f:{self.f_score})"
 
     # Checks if other object has required attribute distance
     def _is_valid_operand(self, o) -> bool:
@@ -123,20 +147,36 @@ class Node(object):
         Returns:
             bool: True if the object has the required attribute, False if it does not.
         """
-        return hasattr(o, "distance")
+        return hasattr(o, "distance") and hasattr(o, "energy") and hasattr(o, "f_score")
+
+     # Checks if other object has required coordinate attributes
+    def _is_valid_coordinate(self, o) -> bool:
+        """Checks if the object to be compared with has the necessary coordinate attribute.
+
+        Args:
+            o (object): The object to be compared with.
+
+        Returns:
+            bool: True if the object has the required attributes, False if it does not.
+        """
+        return hasattr(o, "x") and hasattr(o, "y")
 
     # Set Distance
-    def set_distance(self, distance:float) -> bool:
+    def set_distance(self, distance:float, energy:float=float('inf')) -> bool:
         """Sets the new lowest distance of the current node from the origin.
 
         Args:
             distance (float): The distance from the origin node.
+            energy (float): The used to travel from the origin node.
 
         Returns:
-            bool: True if the new distance was lower than the distance of the node. False otherwise.
+            bool: True if the new distance was lower than the distance of the node and energy is lower or equal to the energy of the node. False otherwise.
         """
-        if distance < self.distance:
+        if energy <= self.energy and distance < self.distance and energy <= self.budget:
             self.distance = distance
+            self.energy = energy
+            if self.destination:
+                self.f_score = self.calc_f(self.destination)
             return True
         return False
     
@@ -148,6 +188,15 @@ class Node(object):
             float: The distance of the node from the origin.
         """
         return self.distance
+    
+    # Get Energy
+    def get_energy(self) -> float:
+        """Returns the current energy of the node from the origin node.
+
+        Returns:
+            float: The energy of the node from the origin.
+        """
+        return self.energy
     
     # Get Num
     def get_num(self) -> str:
@@ -172,3 +221,33 @@ class Node(object):
             bool: True if node has been visited, False otherwise.
         """
         return self.visited
+
+    # Euclidian Distance between 2 nodes
+    def euclidian_distance(self, o) -> float:
+        """Returns the Euclidian distance between 2 nodes.
+
+        Args:
+            (Node): The other node in the computation.
+
+        Returns:
+            float: The distance betwen 2 nodes.
+        """
+        if not self._is_valid_coordinate(o):
+            return NotImplemented
+        return sqrt(((self.x - o.x)**2) +((self.y - o.y)**2))
+
+    # Heuristic function
+    def calc_f(self, o) -> float:
+        """Calculates the heuristic function.
+
+        Args:
+            o (Node): The destination node
+
+        Returns:
+            float: The estimated total distance from the start to the end.
+        """
+        # BUG Need to fix this to get optimal solution
+        try: 
+            return self.energy + ((self.energy / self.distance) * self.euclidian_distance(o))
+        except ZeroDivisionError:
+            return float('inf')
