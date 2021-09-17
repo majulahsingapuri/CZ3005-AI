@@ -9,12 +9,13 @@ with open('utils/Coord.json', 'r') as f:
 class Node(object):
 
     # Initialisation
-    def __init__(self, num:str, budget:float=float('inf')) -> None:
+    def __init__(self, num:str, budget:float=float('inf'), destination=None) -> None:
         """Creates new node from given node number.
 
         Args:
             num (str): The node number as a string from the format in the JSON files.
-            budget (int): The energy budget of the current traversal.
+            budget (int, optional): The energy budget of the current traversal. Defaults to float('inf').
+            destination (Node, optional): The destination node from this node. Defaults to None.
 
         Raises:
             ValueError: Input is not a string, the string is empty or when the given value is not an integer.
@@ -41,6 +42,8 @@ class Node(object):
         self.energy = float('inf')
         self.visited = False
         self.budget = budget
+        self.f_score = float('inf')
+        self.destination:Node = destination
 
     # Check if Nodes are the same
     def __eq__(self, o) -> bool:
@@ -56,7 +59,7 @@ class Node(object):
 
     # Ordering less than
     def __lt__(self, o) -> bool:
-        """Checks if current node is closer to origin or uses less energy than the node to be compared with.
+        """Checks if current node is closer to origin or has a lower F-score than the node to be compared with.
 
         Args:
             o (object): The node to be compared with.
@@ -66,10 +69,12 @@ class Node(object):
         """
         if not self._is_valid_operand(o):
             return NotImplemented
+        if self.destination:
+            return self.f_score < o.f_score
         return self.distance < o.distance
     # Ordering more than
     def __gt__(self, o) -> bool:
-        """Checks if current node is further to origin or uses more energy than the node to be compared with.
+        """Checks if current node is further to origin or has a higher F-score than the node to be compared with.
 
         Args:
             o (object): The node to be compared with.
@@ -79,10 +84,12 @@ class Node(object):
         """
         if not self._is_valid_operand(o):
             return NotImplemented
+        if self.destination:
+            return self.f_score > o.f_score
         return self.distance > o.distance
     # Ordering less than or equals
     def __le__(self, o) -> bool:
-        """Checks if current node is closer or equidistant to origin or uses less or equal energy than the node to be compared with.
+        """Checks if current node is closer or equidistant to origin or has a less or equal F-score than the node to be compared with.
 
         Args:
             o (object): The node to be compared with.
@@ -92,11 +99,13 @@ class Node(object):
         """
         if not self._is_valid_operand(o):
             return NotImplemented
+        if self.destination:
+            return self.f_score <= o.f_score
         return self.distance <= o.distance
 
     # Ordering more than or equals
     def __ge__(self, o) -> bool:
-        """Checks if current node is further or equidistant to origin or uses more or equal energy than the node to be compared with.
+        """Checks if current node is further or equidistant to origin or has a more or equal F-score than the node to be compared with.
 
         Args:
             o (object): The node to be compared with.
@@ -106,6 +115,8 @@ class Node(object):
         """
         if not self._is_valid_operand(o):
             return NotImplemented
+        if self.destination:
+            return self.f_score >= o.f_score
         return self.distance >= o.distance
 
     # String representation
@@ -115,7 +126,7 @@ class Node(object):
         Returns:
             str: The string representation as Node(id:_, distance:_).
         """
-        return f"Node(id:{self.num}, d:{self.distance}, e:{self.energy}, b:{self.budget}, x:{self.x}, y:{self.y})"
+        return f"Node(id:{self.num}, d:{self.distance}, e:{self.energy}, b:{self.budget}, x:{self.x}, y:{self.y}, f:{self.f_score})"
 
     # String representation
     def __str__(self) -> str:
@@ -124,7 +135,7 @@ class Node(object):
         Returns:
             str: The string representation as Node(id:_, distance:_).
         """
-        return f"Node(id:{self.num}, d:{self.distance}, e:{self.energy}, b:{self.budget}, x:{self.x}, y:{self.y})"
+        return f"Node(id:{self.num}, d:{self.distance}, e:{self.energy}, b:{self.budget}, x:{self.x}, y:{self.y}, f:{self.f_score})"
 
     # Checks if other object has required attribute distance
     def _is_valid_operand(self, o) -> bool:
@@ -136,7 +147,7 @@ class Node(object):
         Returns:
             bool: True if the object has the required attribute, False if it does not.
         """
-        return hasattr(o, "distance") and hasattr(o, "energy")
+        return hasattr(o, "distance") and hasattr(o, "energy") and hasattr(o, "f_score")
 
      # Checks if other object has required coordinate attributes
     def _is_valid_coordinate(self, o) -> bool:
@@ -164,6 +175,8 @@ class Node(object):
         if energy <= self.energy and distance < self.distance and energy <= self.budget:
             self.distance = distance
             self.energy = energy
+            if self.destination:
+                self.f_score = self.calc_f(self.destination)
             return True
         return False
     
@@ -210,16 +223,31 @@ class Node(object):
         return self.visited
 
     # Euclidian Distance between 2 nodes
-    def distance(self, o) -> float:
+    def euclidian_distance(self, o) -> float:
         """Returns the Euclidian distance between 2 nodes.
 
         Args:
-            o (Node): The other node in the computation.
+            (Node): The other node in the computation.
 
         Returns:
             float: The distance betwen 2 nodes.
         """
         if not self._is_valid_coordinate(o):
             return NotImplemented
-        return sqrt((self.x - o.x)**2 + (self.y - o.y)**2)
+        return sqrt(((self.x - o.x)**2) +((self.y - o.y)**2))
 
+    # Heuristic function
+    def calc_f(self, o) -> float:
+        """Calculates the heuristic function.
+
+        Args:
+            o (Node): The destination node
+
+        Returns:
+            float: The estimated total distance from the start to the end.
+        """
+        # BUG Need to fix this to get optimal solution
+        try: 
+            return self.energy + ((self.energy / self.distance) * self.euclidian_distance(o))
+        except ZeroDivisionError:
+            return float('inf')

@@ -11,10 +11,10 @@ def main():
     # Search Space
     budget = input("Enter Energy budget: ")
     budget = float(budget)
-    start_node = input("Start Node: ")
-    start_node = Node(start_node, budget)
     end_node = input("End Node: ")
     end_node = Node(end_node, budget)
+    start_node = input("Start Node: ")
+    start_node = Node(start_node, budget)
 
     # Priority Queue
     queue = PriorityQueue(maxsize=0)
@@ -81,9 +81,9 @@ def main():
                 ) and pointer.get(cur_node.get_num()) != adj_node.get_num():
                 pointer[adj_node.get_num()] = cur_node.get_num()
 
-            # Add item to queue
-            if adj_node not in list(queue.queue):
-                queue.put(adj_node)
+                # Add item to queue
+                if adj_node not in list(queue.queue):
+                    queue.put(adj_node)
     
     # Rebuild path
     cur = end_node.get_num()
