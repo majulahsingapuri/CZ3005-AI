@@ -66,8 +66,7 @@ class Node(object):
         """
         if not self._is_valid_operand(o):
             return NotImplemented
-        return self.distance < o.distance or self.energy < o.energy
-
+        return self.distance < o.distance
     # Ordering more than
     def __gt__(self, o) -> bool:
         """Checks if current node is further to origin or uses more energy than the node to be compared with.
@@ -80,8 +79,7 @@ class Node(object):
         """
         if not self._is_valid_operand(o):
             return NotImplemented
-        return self.distance > o.distance or self.energy > o.energy
-
+        return self.distance > o.distance
     # Ordering less than or equals
     def __le__(self, o) -> bool:
         """Checks if current node is closer or equidistant to origin or uses less or equal energy than the node to be compared with.
@@ -94,7 +92,7 @@ class Node(object):
         """
         if not self._is_valid_operand(o):
             return NotImplemented
-        return self.distance <= o.distance or self.energy <= o.energy
+        return self.distance <= o.distance
 
     # Ordering more than or equals
     def __ge__(self, o) -> bool:
@@ -108,7 +106,7 @@ class Node(object):
         """
         if not self._is_valid_operand(o):
             return NotImplemented
-        return self.distance >= o.distance or self.energy >= o.energy
+        return self.distance >= o.distance
 
     # String representation
     def __repr__(self) -> str:
