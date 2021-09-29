@@ -222,9 +222,9 @@ class Node(object):
         """
         return self.visited
 
-    # Euclidian Distance between 2 nodes
-    def euclidian_distance(self, o) -> float:
-        """Returns the Euclidian distance between 2 nodes.
+    # Euclidean Distance between 2 nodes
+    def euclidean_distance(self, o) -> float:
+        """Returns the Euclidean distance between 2 nodes.
 
         Args:
             (Node): The other node in the computation.
@@ -246,8 +246,13 @@ class Node(object):
         Returns:
             float: The estimated total distance from the start to the end.
         """
-        # BUG Need to fix this to get optimal solution
         try: 
-            return self.energy + ((self.energy / self.distance) * self.euclidian_distance(o))
+            # f(n) is a combination of energy and distance
+            # 1. took the ratio between the mean of distance against mean of energy to prevent the h(n) of energy to overpower over h() of distance
+                    # this ratio acts as a modifying factor for the h(n) for energy
+            # 2. took the ratio between the mean of energy againt the mean of distance 
+                    # this ratio acts as a modifying factor for the h(n) for distance
+
+            return self.energy + self.distance + (0.4*(self.energy / self.distance) * self.euclidean_distance(o)) + (2*self.euclidean_distance(o))
         except ZeroDivisionError:
             return float('inf')
